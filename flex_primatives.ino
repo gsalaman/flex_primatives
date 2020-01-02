@@ -1,5 +1,4 @@
 // Adafruit_NeoMatrix example for single NeoPixel Shield.
-// Scrolls 'Howdy' across the matrix in a portrait (vertical) orientation.
 
 #include <Adafruit_GFX.h>
 #include <Adafruit_NeoMatrix.h>
@@ -92,30 +91,35 @@ void setup()
   matrix.setTextWrap(false);
   matrix.setBrightness(40);
   matrix.setTextColor(colors[0]);
+  matrix.fillScreen(0);
   init_rainbow();
+  matrix.show();
+
+  Serial.println("Init complete");
+  
 }
 
 int x    = matrix.width();
 
 #define PIXELS_PER_CHAR 6
-char message[]="The Quick Brown Fox Jumped over the Lazy Dogs";
+char message[]="Glenn Rules";
 
 int pass = 0;
 
-typedef enum
-{
-  MODE_TEXT=0,
-  MODE_RECTANGLE,
-  MODE_RAINBOW
-} mode_type;
-
-mode_type Mode=MODE_TEXT;
+#define MODE_TEXT      1
+#define MODE_RECTANGLE 2
+#define MODE_RAINBOW   3
+#define MODE_DROPS     4
 
 void loop() 
 {
-  switch (Mode)
+
+  int my_mode=4;
+  
+  Serial.println(my_mode);
+
+  if (my_mode == MODE_TEXT)
   {
-    case MODE_TEXT:
        matrix.fillScreen(0);
        matrix.setCursor(x, 0);
        matrix.print(message);
@@ -128,22 +132,38 @@ void loop()
        }
        matrix.show();
        delay(100);
-    break;
-
-    case MODE_RECTANGLE:
-      matrix.drawRect(0,0,32,8,colors[0]);
+  }
+  else if (my_mode == MODE_RECTANGLE)
+  {
+      matrix.drawRect(1,1,4,4,colors[0]);
       matrix.show();
-    break;
-
-    case MODE_RAINBOW:
+      Serial.println("rect");
+      delay(100);
+  }
+  else if (my_mode == MODE_RAINBOW)
+  {
       for (int i=0;i<NUM_RAINBOW_COLORS;i++)
       {
         matrix.drawLine(i,0,i,7,rainbow[i]);
       }
       matrix.show();
-    break;
+  }
+  else if (my_mode == MODE_DROPS)
+  {
+    long y = random(0,8);
+    long x = random(0,32);
+    long radius = random(1,4);
+    long color = random(0,32);
 
-    default:
+    matrix.drawCircle(x,y,radius, rainbow[color]);
+    matrix.show();
+
+    delay(1000);
+    
+  }
+  else
+  {
       Serial.println("Unknown mode!");
-  }  // end of switch on Mode
+  }  
+  
 }
