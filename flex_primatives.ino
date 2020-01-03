@@ -39,6 +39,16 @@ const uint16_t colors[] = {
 #define NUM_RAINBOW_COLORS 32
 uint16_t rainbow[NUM_RAINBOW_COLORS];
 
+typedef enum
+{
+  DISPLAY_TEXT,
+  DISPLAY_RECTANGLES,
+  DISPLAY_RAINBOW,
+  DISPLAY_DROPS
+} display_mode_type;
+
+display_mode_type display_mode=DISPLAY_DROPS;
+
 void init_rainbow()
 {
   int r=255;
@@ -83,6 +93,81 @@ void init_rainbow()
   }
 }
 
+typedef struct
+{
+  bool     active;
+  int      center_x;
+  int      center_y;
+  int      radius;
+  uint32_t color;  
+} drop_data_type;
+
+#define NUM_DROPS 8
+drop_data_type drops[NUM_DROPS];
+#define MAX_DROP_RADIUS 3
+
+void init_drops( void )
+{
+  int i;
+
+  for (i=0;i<NUM_DROPS;i++)
+  {
+    drops[i].active = false;
+  }
+}
+
+void display_drops( void )
+{
+  bool new_drop=false;
+  int  i;
+  
+  // walk through the drops array, increasing the radius of any active drops.  If any
+  //   are too big, mark them as inactive.
+  // if we have any inactive, make the FIRST active (so we're only adding one at a time)
+  //    May change this in future to randomly decide to make one active
+
+  for (i = 0; i < NUM_DROPS; i++)
+  {
+    if (drops[i].active)
+    {
+      if (drops[i].radius >= MAX_DROP_RADIUS)
+      {
+        //Serial.print("active drop ");
+        //Serial.print(i);
+        //Serial.println(" hit max radius");
+        
+        drops[i].active = false;
+      }
+      else 
+      {
+        drops[i].radius++;
+        matrix.fillCircle(drops[i].center_x, drops[i].center_y,drops[i].radius,0);
+        matrix.drawCircle(drops[i].center_x, drops[i].center_y,drops[i].radius,drops[i].color);
+        matrix.show();
+        //Serial.print("Increase radius of drop ");
+        //Serial.print(i);
+        //Serial.print(" now radius");
+        //Serial.println(drops[i].radius);
+      }
+    }
+    else if (!new_drop)
+    {
+      //Serial.print("New drop: ");
+      //Serial.println(i);
+      
+      new_drop = true;
+      drops[i].center_x = random(0,32);
+      drops[i].center_y = random(0,8);
+      drops[i].radius = 0;
+      drops[i].color = rainbow[random(0,32)];
+      drops[i].active = true;
+    }
+
+    
+  }
+  //delay(10);
+}
+
 void setup() 
 {
   Serial.begin(9600);
@@ -95,6 +180,8 @@ void setup()
   init_rainbow();
   matrix.show();
 
+  init_drops();
+
   Serial.println("Init complete");
   
 }
@@ -106,24 +193,20 @@ char message[]="Glenn Rules";
 
 int pass = 0;
 
-#define MODE_TEXT      1
-#define MODE_RECTANGLE 2
-#define MODE_RAINBOW   3
-#define MODE_DROPS     4
-
 void loop() 
 {
-
-  int my_mode=4;
+  int message_pixels;
   
-  Serial.println(my_mode);
+  Serial.println(display_mode);
 
-  if (my_mode == MODE_TEXT)
+  switch (display_mode)
   {
+ 
+     case DISPLAY_TEXT:     
        matrix.fillScreen(0);
        matrix.setCursor(x, 0);
        matrix.print(message);
-       int message_pixels = PIXELS_PER_CHAR * strlen(message);
+       message_pixels = PIXELS_PER_CHAR * strlen(message);
        if(--x < -message_pixels) 
        {
           x = matrix.width();
@@ -132,37 +215,29 @@ void loop()
        }
        matrix.show();
        delay(100);
-  }
-  else if (my_mode == MODE_RECTANGLE)
-  {
-      matrix.drawRect(1,1,4,4,colors[0]);
-      matrix.show();
-      Serial.println("rect");
-      delay(100);
-  }
-  else if (my_mode == MODE_RAINBOW)
-  {
-      for (int i=0;i<NUM_RAINBOW_COLORS;i++)
-      {
-        matrix.drawLine(i,0,i,7,rainbow[i]);
-      }
-      matrix.show();
-  }
-  else if (my_mode == MODE_DROPS)
-  {
-    long y = random(0,8);
-    long x = random(0,32);
-    long radius = random(1,4);
-    long color = random(0,32);
+       break;
+ 
+     
+     case DISPLAY_RECTANGLES:
+       Serial.println("Inside rects!!!");
+       matrix.drawRect(1,1,4,4,colors[0]);
+       matrix.show();
+       delay(100);
+       break;
 
-    matrix.drawCircle(x,y,radius, rainbow[color]);
-    matrix.show();
+     case DISPLAY_RAINBOW:     
+       for (int i=0;i<NUM_RAINBOW_COLORS;i++)
+       {
+         matrix.drawLine(i,0,i,7,rainbow[i]);
+       }
+       matrix.show();
+     break;
+ 
+     case DISPLAY_DROPS:
+       display_drops();
+     break;
 
-    delay(1000);
-    
-  }
-  else
-  {
+     default:
       Serial.println("Unknown mode!");
   }  
   
