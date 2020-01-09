@@ -47,7 +47,7 @@ typedef enum
   DISPLAY_DROPS
 } display_mode_type;
 
-display_mode_type display_mode=DISPLAY_DROPS;
+display_mode_type display_mode=DISPLAY_RECTANGLES;
 
 void init_rainbow()
 {
@@ -102,7 +102,7 @@ typedef struct
   uint32_t color;  
 } drop_data_type;
 
-#define NUM_DROPS 8
+#define NUM_DROPS 1
 drop_data_type drops[NUM_DROPS];
 #define MAX_DROP_RADIUS 3
 
@@ -165,7 +165,38 @@ void display_drops( void )
 
     
   }
-  //delay(10);
+  delay(100);
+}
+
+void display_rectangles( void )
+{
+  int x=0;
+  int y=0;
+  int x_jump=4;
+  while (y < MATRIX_ROWS/2)
+  {
+    matrix.fillScreen(0);
+    matrix.drawRect(x,y,MATRIX_COLUMNS-(2*x),MATRIX_ROWS-(2*y),matrix.Color(255,0,0));
+    matrix.show();
+    delay(100);
+    y++;
+    x=x+x_jump;
+  }
+
+  while (y > 0)
+  {
+    y--;
+    x=x-x_jump;
+    matrix.fillScreen(0);
+    matrix.drawRect(x,y,MATRIX_COLUMNS-(2*x),MATRIX_ROWS-(2*y),matrix.Color(255,0,0));
+    matrix.show();
+    delay(100);
+
+    
+  }
+  
+
+    
 }
 
 void setup() 
@@ -219,11 +250,8 @@ void loop()
  
      
      case DISPLAY_RECTANGLES:
-       Serial.println("Inside rects!!!");
-       matrix.drawRect(1,1,4,4,colors[0]);
-       matrix.show();
-       delay(100);
-       break;
+       display_rectangles();
+     break;
 
      case DISPLAY_RAINBOW:     
        for (int i=0;i<NUM_RAINBOW_COLORS;i++)
